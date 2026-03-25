@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}New Order — WoodCraft ERP{% endblock %}
+{% block page_title %}New Order{% endblock %}
+
+{% block content %}
+<div class="fade-in" style="max-width:900px">
+<div class="page-header">
+  <h1>Create New Order</h1>
+  <a href="{{ url_for('orders') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<form method="POST" id="orderForm">
+  <input type="hidden" name="items" id="itemsInput">
+
+  <div class="grid-2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">Order Details</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Customer *</label>
+          <select name="customer_id" required>
+            <option value="">— Select Customer —</option>
+            {% for c in customers %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Delivery Date</label>
+          <input type="date" name="delivery_date" min="{{ now_date }}">
+        </div>
+        <div class="form-group full">
+          <label>Notes</label>
+          <textarea name="notes" placeholder="Special instructions…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">Add Products</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Product</label>
+          <select id="productSelect">
+            <option value="">— Choose product —</option>
+            {% for p in products %}
+            <option value="{{ p.id }}" data-price="{{ p.base_price }}" data-name="{{ p.name }}">{{ p.name }} — ₹{{ "{:,.0f}".format(p.base_price) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="qtyInput" min="1" value="1" placeholder="1">
+        </div>
+        <div class="form-group" style="justify-content:flex-end">
+          <label>&nbsp;</label>
+          <button type="button" class="btn btn-brass" onclick="addItem()"><i class="fas fa-plus"></i> Add Item</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Items Table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Order Items</div>
+      <div style="font-family:'DM Mono',monospace;font-size:18px;color:var(--walnut)">
+        Total: ₹<span id="totalDisplay">0</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Unit Price</th><th>Qty</th><th class="text-right">Subtotal</th><th></th></tr></thead>
+        <tbody id="itemsBody">
+          <tr id="emptyRow"><td colspan="5" class="text-center" style="padding:24px;color:var(--text-light)">No items added yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <a href="{{ url_for('orders') }}" class="btn btn-outline">Cancel</a>
+      <button type="submit" class="btn btn-primary" onclick="submitOrder()"><i class="fas fa-check"></i> Create Order</button>
+    </div>
+  </div>
+</form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let items = [];
+
+function addItem() {
+  const sel = document.getElementById('productSelect');
+  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+  if (!sel.value) return alert('Select a product first');
+  const opt = sel.options[sel.selectedIndex];
+  const price = parseFloat(opt.dataset.price);
+  const existing = items.find(i => i.product_id == sel.value);
+  if (existing) { existing.qty += qty; }
+  else { items.push({ product_id: sel.value, name: opt.dataset.name, price, qty }); }
+  renderItems();
+  sel.value = '';
+  document.getElementById('qtyInput').value = 1;
+}
+
+function removeItem(idx) { items.splice(idx, 1); renderItems(); }
+
+function renderItems() {
+  const tbody = document.getElementById('itemsBody');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr id="emptyRow"><td colspan="5" class="text-center" style="padding:24px;color:var(--text-light)">No items added yet</td></tr>';
+    document.getElementById('totalDisplay').textContent = '0';
+    return;
+  }
+  let total = 0;
+  tbody.innerHTML = items.map((item, i) => {
+    const sub = item.price * item.qty;
+    total += sub;
+    return `<tr>
+      <td style="font-weight:500">${item.name}</td>
+      <td style="font-family:'DM Mono',monospace">₹${item.price.toLocaleString('en-IN')}</td>
+      <td style="font-family:'DM Mono',monospace">${item.qty}</td>
+      <td class="text-right" style="font-family:'DM Mono',monospace;font-weight:600">₹${sub.toLocaleString('en-IN')}</td>
+      <td><button type="button" class="btn btn-danger btn-sm btn-icon" onclick="removeItem(${i})"><i class="fas fa-times"></i></button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('totalDisplay').textContent = total.toLocaleString('en-IN');
+}
+
+function submitOrder() {
+  if (items.length === 0) { alert('Add at least one product'); return; }
+  document.getElementById('itemsInput').value = JSON.stringify(items);
+}
+
+// Set min date to today
+document.querySelector('[name="delivery_date"]').min = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

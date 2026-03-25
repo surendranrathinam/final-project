@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Customer — WoodCraft ERP{% endblock %}
+{% block page_title %}{{ action }} Customer{% endblock %}
+
+{% block content %}
+<div class="fade-in" style="max-width:680px">
+<div class="page-header">
+  <h1>{{ action }} Customer</h1>
+  <a href="{{ url_for('customers') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="card">
+  <form method="POST">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" name="name" value="{{ customer.name if customer else '' }}" required placeholder="Customer full name">
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="text" name="phone" value="{{ customer.phone if customer else '' }}" placeholder="Mobile number">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ customer.email if customer else '' }}" placeholder="Email address">
+      </div>
+      <div class="form-group full">
+        <label>Address</label>
+        <textarea name="address" placeholder="Full address">{{ customer.address if customer else '' }}</textarea>
+      </div>
+      <div class="form-group full">
+        <label>Notes</label>
+        <textarea name="notes" placeholder="Any special notes or preferences">{{ customer.notes if customer else '' }}</textarea>
+      </div>
+    </div>
+    <div class="flex gap-8 mt-24">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Customer</button>
+      <a href="{{ url_for('customers') }}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

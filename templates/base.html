@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}WoodCraft ERP{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="fas fa-hammer"></i></div>
+    <div class="brand-text">
+      <span class="brand-name">WoodCraft</span>
+      <span class="brand-sub">ERP System</span>
+    </div>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">{{ session.username[0].upper() }}</div>
+    <div class="user-info">
+      <span class="user-name">{{ session.username }}</span>
+      <span class="user-role">{{ session.role }}</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint=='dashboard' %}active{% endif %}">
+      <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+    </a>
+    <div class="nav-group-label">Business</div>
+    <a href="{{ url_for('customers') }}" class="nav-item {% if 'customer' in request.endpoint %}active{% endif %}">
+      <i class="fas fa-users"></i><span>Customers</span>
+    </a>
+    <a href="{{ url_for('orders') }}" class="nav-item {% if 'order' in request.endpoint %}active{% endif %}">
+      <i class="fas fa-clipboard-list"></i><span>Orders</span>
+    </a>
+    <a href="{{ url_for('products') }}" class="nav-item {% if 'product' in request.endpoint %}active{% endif %}">
+      <i class="fas fa-couch"></i><span>Products</span>
+    </a>
+    <div class="nav-group-label">Operations</div>
+    <a href="{{ url_for('tasks') }}" class="nav-item {% if 'task' in request.endpoint %}active{% endif %}">
+      <i class="fas fa-screwdriver-wrench"></i><span>Works & Tasks</span>
+    </a>
+    <a href="{{ url_for('inventory') }}" class="nav-item {% if 'inventory' in request.endpoint %}active{% endif %}">
+      <i class="fas fa-boxes-stacked"></i><span>Inventory</span>
+    </a>
+    <div class="nav-group-label">Finance</div>
+    <a href="{{ url_for('billing') }}" class="nav-item {% if 'billing' in request.endpoint or 'invoice' in request.endpoint %}active{% endif %}">
+      <i class="fas fa-file-invoice-dollar"></i><span>Billing</span>
+    </a>
+    <a href="{{ url_for('reports') }}" class="nav-item {% if request.endpoint=='reports' %}active{% endif %}">
+      <i class="fas fa-chart-bar"></i><span>Reports</span>
+    </a>
+  </nav>
+
+  <a href="{{ url_for('logout') }}" class="sidebar-logout">
+    <i class="fas fa-right-from-bracket"></i><span>Logout</span>
+  </a>
+</nav>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+    <div class="topbar-right">
+      <div class="topbar-date"><i class="far fa-calendar"></i> <span id="topbar-date"></span></div>
+    </div>
+  </header>
+
+  <main class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for cat, msg in messages %}
+          <div class="flash flash-{{ cat }}">
+            <i class="fas {% if cat=='success' %}fa-check-circle{% elif cat=='warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+            {{ msg }}
+            <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+
+<script>
+  const d = new Date();
+  document.getElementById('topbar-date').textContent =
+    d.toLocaleDateString('en-IN', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+</script>
+</body>
+</html>

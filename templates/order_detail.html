@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }} — WoodCraft ERP{% endblock %}
+{% block page_title %}Order #{{ '%04d'|format(order.id) }}{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+<div class="page-header">
+  <div>
+    <h1>Order #{{ '%04d'|format(order.id) }}</h1>
+    <div style="font-size:13px;color:var(--text-light);margin-top:4px">Created {{ order.created_at.strftime('%d %B %Y') }}</div>
+  </div>
+  <div class="flex gap-8">
+    {% if not invoice %}
+    <form method="POST" action="{{ url_for('generate_invoice', order_id=order.id) }}">
+      <button class="btn btn-brass"><i class="fas fa-file-invoice"></i> Generate Invoice</button>
+    </form>
+    {% else %}
+    <a href="{{ url_for('invoice_detail', id=invoice.id) }}" class="btn btn-success"><i class="fas fa-receipt"></i> View Invoice</a>
+    {% endif %}
+    <a href="{{ url_for('orders') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:20px">
+  <!-- Order Info -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px">Order Information</div>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <div class="detail-label">Customer</div>
+        <div class="detail-value" style="font-weight:600">{{ order.customer_name }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Status</div>
+        <div class="detail-value">
+          <span class="badge badge-{{ order.status.lower().replace(' ','-') }}">{{ order.status }}</span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Phone</div>
+        <div class="detail-value">{{ order.phone or '—' }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Email</div>
+        <div class="detail-value" style="font-size:13px">{{ order.email or '—' }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Order Amount</div>
+        <div class="detail-value" style="font-family:'DM Mono',monospace;color:var(--success);font-size:18px">₹{{ "{:,.0f}".format(order.total_amount) }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Delivery Date</div>
+        <div class="detail-value">{{ order.delivery_date.strftime('%d %b %Y') if order.delivery_date else '—' }}</div>
+      </div>
+    </div>
+    {% if order.notes %}
+    <div style="margin-top:14px;padding:12px;background:var(--linen);border-radius:8px;font-size:13px;color:var(--text-mid);font-style:italic">
+      <i class="fas fa-note-sticky" style="color:var(--brass)"></i> {{ order.notes }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Update Status -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px">Update Status</div>
+    <form method="POST" action="{{ url_for('update_order_status', id=order.id) }}">
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Current Status</label>
+        <select name="status">
+          {% for s in ['Pending','In Progress','Quality Check','Ready','Delivered','Cancelled'] %}
+          <option value="{{ s }}" {% if order.status==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-primary"><i class="fas fa-rotate"></i> Update Status</button>
+    </form>
+
+    <!-- Progress Visual -->
+    {% set stages = ['Pending','In Progress','Quality Check','Ready','Delivered'] %}
+    {% set stage_idx = stages.index(order.status) if order.status in stages else 0 %}
+    <div style="margin-top:20px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        {% for s in stages %}
+        <div style="text-align:center;flex:1">
+          <div style="width:20px;height:20px;border-radius:50%;margin:0 auto 4px;
+                      background:{% if loop.index0<=stage_idx %}var(--brass){% else %}var(--linen-dark){% endif %};
+                      display:flex;align-items:center;justify-content:center">
+            {% if loop.index0<=stage_idx %}<i class="fas fa-check" style="font-size:9px;color:white"></i>{% endif %}
+          </div>
+          <div style="font-size:9px;color:var(--text-light);text-align:center">{{ s.replace(' ','\n') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="progress" style="margin-top:4px">
+        <div class="progress-bar" style="width:{{ (stage_idx/(stages|length-1)*100)|int }}%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Order Items -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-title" style="margin-bottom:16px">Ordered Items</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Product</th><th>Wood Type</th><th>Unit Price</th><th>Qty</th><th class="text-right">Subtotal</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td style="font-weight:500">{{ item.product_name }}</td>
+          <td style="color:var(--text-mid)">{{ item.wood_type or '—' }}</td>
+          <td style="font-family:'DM Mono',monospace">₹{{ "{:,.0f}".format(item.unit_price) }}</td>
+          <td>{{ item.quantity }}</td>
+          <td class="text-right" style="font-family:'DM Mono',monospace;font-weight:600">₹{{ "{:,.0f}".format(item.unit_price * item.quantity) }}</td>
+        </tr>
+        {% endfor %}
+        <tr style="background:var(--linen)">
+          <td colspan="4" class="text-right" style="font-weight:600;padding-right:16px">Total</td>
+          <td class="text-right" style="font-family:'DM Mono',monospace;font-weight:700;font-size:16px;color:var(--walnut)">₹{{ "{:,.0f}".format(order.total_amount) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Tasks -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Assigned Tasks</div>
+  </div>
+  {% if tasks %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Task</th><th>Carpenter</th><th>Due Date</th><th>Hours</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for t in tasks %}
+        <tr>
+          <td style="font-weight:500">{{ t.title }}</td>
+          <td>{{ t.carpenter or '—' }}</td>
+          <td style="font-size:13px">{{ t.due_date.strftime('%d %b %Y') if t.due_date else '—' }}</td>
+          <td style="font-family:'DM Mono',monospace">{{ t.labor_hours }}h</td>
+          <td><span class="badge badge-{{ t.status.lower().replace(' ','-') }}">{{ t.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:28px;color:var(--text-light)">No tasks assigned to this order</div>
+  {% endif %}
+</div>
+
+</div>
+{% endblock %}

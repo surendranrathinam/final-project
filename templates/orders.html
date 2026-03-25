@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Orders — WoodCraft ERP{% endblock %}
+{% block page_title %}Orders{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+<div class="page-header">
+  <h1>Order Management</h1>
+  <a href="{{ url_for('new_order') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Order</a>
+</div>
+
+<!-- Status Filters -->
+<div class="flex gap-8" style="margin-bottom:20px;flex-wrap:wrap">
+  {% for s in ['','Pending','In Progress','Quality Check','Ready','Delivered','Cancelled'] %}
+  <a href="{{ url_for('orders', status=s) }}"
+     class="btn btn-sm {% if status_filter==s %}btn-brass{% else %}btn-outline{% endif %}">
+    {{ s or 'All Orders' }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Order #</th><th>Customer</th><th>Date</th><th>Delivery</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td style="font-family:'DM Mono',monospace"><a href="{{ url_for('order_detail', id=o.id) }}" style="color:var(--brass);text-decoration:none;font-weight:600">#{{ '%04d'|format(o.id) }}</a></td>
+          <td style="font-weight:500">{{ o.customer_name }}</td>
+          <td style="font-size:13px;color:var(--text-light)">{{ o.created_at.strftime('%d %b %Y') }}</td>
+          <td style="font-size:13px">{{ o.delivery_date.strftime('%d %b %Y') if o.delivery_date else '—' }}</td>
+          <td style="font-family:'DM Mono',monospace;font-weight:600">₹{{ "{:,.0f}".format(o.total_amount) }}</td>
+          <td><span class="badge badge-{{ o.status.lower().replace(' ','-') }}">{{ o.status }}</span></td>
+          <td><a href="{{ url_for('order_detail', id=o.id) }}" class="btn btn-outline btn-sm">View Details</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center" style="padding:40px;color:var(--text-light)">No orders found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+{% endblock %}

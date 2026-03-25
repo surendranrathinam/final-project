@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Product{% endblock %}
+{% block page_title %}{{ action }} Product{% endblock %}
+
+{% block content %}
+<div class="fade-in" style="max-width:780px">
+<div class="page-header">
+  <h1>{{ action }} Product</h1>
+  <a href="{{ url_for('products') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+<div class="card">
+  <form method="POST">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Product Name *</label>
+        <input name="name" required value="{{ product.name if product else '' }}" placeholder="e.g. Dining Table 6-Seater">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select name="category">
+          {% for cat in ['Furniture','Storage','Cabinetry','Doors','Windows','Specialty'] %}
+          <option {% if product and product.category==cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Wood Type</label>
+        <select name="wood_type">
+          {% for w in ['Teak','Rosewood','Sheesham','Plywood','MDF','Pine','Oak','Mahogany','Custom'] %}
+          <option {% if product and product.wood_type==w %}selected{% endif %}>{{ w }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Finish</label>
+        <select name="finish">
+          {% for f in ['Polished','Lacquered','Laminated','PU Coated','Natural Oil','Matte','Varnished','Gold Paint','Wax'] %}
+          <option {% if product and product.finish==f %}selected{% endif %}>{{ f }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Dimensions (L×W×H)</label>
+        <input name="dimensions" value="{{ product.dimensions if product else '' }}" placeholder="e.g. 180×90×75 cm">
+      </div>
+      <div class="form-group full">
+        <label>Description</label>
+        <textarea name="description">{{ product.description if product else '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Base Price (₹)</label>
+        <input type="number" name="base_price" step="0.01" value="{{ product.base_price if product else '' }}" required placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>Labor Cost (₹)</label>
+        <input type="number" name="labor_cost" step="0.01" value="{{ product.labor_cost if product else '' }}" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>Material Cost (₹)</label>
+        <input type="number" name="material_cost" step="0.01" value="{{ product.material_cost if product else '' }}" placeholder="0.00">
+      </div>
+    </div>
+    <div class="flex gap-8 mt-24">
+      <button class="btn btn-primary"><i class="fas fa-save"></i> Save Product</button>
+      <a href="{{ url_for('products') }}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

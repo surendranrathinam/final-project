@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }} History — WoodCraft ERP{% endblock %}
+{% block page_title %}Customer History{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+<div class="page-header">
+  <h1>{{ customer.name }}</h1>
+  <div class="flex gap-8">
+    <a href="{{ url_for('edit_customer', id=customer.id) }}" class="btn btn-outline"><i class="fas fa-pen"></i> Edit</a>
+    <a href="{{ url_for('customers') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+  </div>
+</div>
+
+<!-- Customer Info Card -->
+<div class="card" style="margin-bottom:24px">
+  <div class="detail-grid">
+    <div class="detail-item">
+      <div class="detail-label">Phone</div>
+      <div class="detail-value">{{ customer.phone or '—' }}</div>
+    </div>
+    <div class="detail-item">
+      <div class="detail-label">Email</div>
+      <div class="detail-value">{{ customer.email or '—' }}</div>
+    </div>
+    <div class="detail-item">
+      <div class="detail-label">Total Spent</div>
+      <div class="detail-value" style="color:var(--success);font-family:'DM Mono',monospace">₹{{ "{:,.2f}".format(total_spent) }}</div>
+    </div>
+    <div class="detail-item">
+      <div class="detail-label">Total Orders</div>
+      <div class="detail-value">{{ orders|length }}</div>
+    </div>
+    <div class="detail-item" style="grid-column:1/-1">
+      <div class="detail-label">Address</div>
+      <div class="detail-value">{{ customer.address or '—' }}</div>
+    </div>
+    {% if customer.notes %}
+    <div class="detail-item" style="grid-column:1/-1">
+      <div class="detail-label">Notes</div>
+      <div class="detail-value" style="font-style:italic;color:var(--text-mid)">{{ customer.notes }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('orders-tab',this)">Orders ({{ orders|length }})</button>
+  <button class="tab-btn" onclick="showTab('invoices-tab',this)">Invoices ({{ invoices|length }})</button>
+</div>
+
+<div id="orders-tab" class="tab-pane active">
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Order #</th><th>Date</th><th>Delivery</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td style="font-family:'DM Mono',monospace;color:var(--brass)">#{{ o.id }}</td>
+            <td style="font-size:13px">{{ o.created_at.strftime('%d %b %Y') }}</td>
+            <td style="font-size:13px">{{ o.delivery_date.strftime('%d %b %Y') if o.delivery_date else '—' }}</td>
+            <td style="font-family:'DM Mono',monospace">₹{{ "{:,.0f}".format(o.total_amount) }}</td>
+            <td><span class="badge badge-{{ o.status.lower().replace(' ','-') }}">{{ o.status }}</span></td>
+            <td><a href="{{ url_for('order_detail', id=o.id) }}" class="btn btn-outline btn-sm">View</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center" style="padding:28px;color:var(--text-light)">No orders yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="invoices-tab" class="tab-pane">
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Invoice #</th><th>Date</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+          {% for i in invoices %}
+          <tr>
+            <td style="font-family:'DM Mono',monospace;color:var(--brass)">INV-{{ '%04d'|format(i.id) }}</td>
+            <td style="font-size:13px">{{ i.created_at.strftime('%d %b %Y') }}</td>
+            <td style="font-family:'DM Mono',monospace">₹{{ "{:,.0f}".format(i.subtotal) }}</td>
+            <td style="font-family:'DM Mono',monospace">₹{{ "{:,.0f}".format(i.tax) }}</td>
+            <td style="font-family:'DM Mono',monospace;font-weight:600">₹{{ "{:,.0f}".format(i.total_amount) }}</td>
+            <td><span class="badge badge-{{ i.status.lower() }}">{{ i.status }}</span></td>
+            <td><a href="{{ url_for('invoice_detail', id=i.id) }}" class="btn btn-outline btn-sm">View</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center" style="padding:28px;color:var(--text-light)">No invoices yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endblock %}

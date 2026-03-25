@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Reports — WoodCraft ERP{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+<div class="page-header">
+  <h1>Business Reports</h1>
+  <form class="flex gap-8" method="GET">
+    <select name="period" onchange="this.form.submit()" style="padding:8px 12px;border:1.5px solid var(--linen-dark);border-radius:8px;background:var(--cream)">
+      <option value="monthly" {% if period=='monthly' %}selected{% endif %}>Monthly Summary</option>
+      <option value="daily" {% if period=='daily' %}selected{% endif %}>Daily Summary</option>
+    </select>
+    <select name="year" onchange="this.form.submit()" style="padding:8px 12px;border:1.5px solid var(--linen-dark);border-radius:8px;background:var(--cream)">
+      {% for y in range(2022, 2027) %}
+      <option value="{{ y }}" {% if year==y %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+    {% if period == 'daily' %}
+    <select name="month" onchange="this.form.submit()" style="padding:8px 12px;border:1.5px solid var(--linen-dark);border-radius:8px;background:var(--cream)">
+      {% set month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+      {% for i in range(1,13) %}
+      <option value="{{ i }}" {% if month==i %}selected{% endif %}>{{ month_names[i-1] }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Summary Stats -->
+<div class="stat-grid" style="margin-bottom:24px">
+  <div class="stat-card">
+    <div class="stat-icon brass"><i class="fas fa-indian-rupee-sign"></i></div>
+    <div>
+      <div class="stat-value">₹{{ "{:,.0f}".format(summary.total_revenue or 0) }}</div>
+      <div class="stat-label">Total Revenue {{ year }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon walnut"><i class="fas fa-clipboard-list"></i></div>
+    <div>
+      <div class="stat-value">{{ summary.total_orders }}</div>
+      <div class="stat-label">Total Orders {{ year }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+    <div>
+      <div class="stat-value">₹{{ "{:,.0f}".format(summary.avg_order_value or 0) }}</div>
+      <div class="stat-label">Avg Order Value</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-tree"></i></div>
+    <div>
+      <div class="stat-value">₹{{ "{:,.0f}".format(summary.total_materials or 0) }}</div>
+      <div class="stat-label">Total Materials</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-person-digging"></i></div>
+    <div>
+      <div class="stat-value">₹{{ "{:,.0f}".format(summary.total_labor or 0) }}</div>
+      <div class="stat-label">Total Labor</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2" style="margin-bottom:24px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Revenue Trend</div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="salesChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Order Status Distribution</div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Tables Row -->
+<div class="grid-2">
+  <!-- Top Products -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Top Products by Revenue</div>
+      <span style="font-size:12px;color:var(--text-light)">{{ year }}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Product</th><th>Category</th><th>Units</th><th>Revenue</th></tr></thead>
+        <tbody>
+          {% for i, p in enumerate(top_products) %}
+          <tr>
+            <td style="font-family:'DM Mono',monospace;color:var(--brass);font-weight:700">{{ i+1 }}</td>
+            <td style="font-weight:500">{{ p.name }}</td>
+            <td><span class="badge badge-in-progress" style="font-size:10px">{{ p.category }}</span></td>
+            <td style="font-family:'DM Mono',monospace">{{ p.units_sold }}</td>
+            <td style="font-family:'DM Mono',monospace;font-weight:600">₹{{ "{:,.0f}".format(p.revenue or 0) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center" style="padding:24px;color:var(--text-light)">No data</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top Customers -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Top Customers</div>
+      <span style="font-size:12px;color:var(--text-light)">{{ year }}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Customer</th><th>Orders</th><th>Total Spent</th></tr></thead>
+        <tbody>
+          {% for i, c in enumerate(top_customers) %}
+          <tr>
+            <td style="font-family:'DM Mono',monospace;color:var(--brass);font-weight:700">{{ i+1 }}</td>
+            <td style="font-weight:500">{{ c.name }}</td>
+            <td style="font-family:'DM Mono',monospace">{{ c.orders }}</td>
+            <td style="font-family:'DM Mono',monospace;font-weight:600;color:var(--success)">₹{{ "{:,.0f}".format(c.spent or 0) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center" style="padding:24px;color:var(--text-light)">No data</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const salesData = {{ sales_data|safe }};
+const statusData = {{ order_status|tojson }};
+const period = "{{ period }}";
+
+// Labels
+let labels, revenues, orders;
+if (period === 'monthly') {
+  const mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  labels = salesData.map(d => mNames[(d.month||1)-1]);
+} else {
+  labels = salesData.map(d => d.date ? d.date.split('T')[0] : d.date);
+}
+revenues = salesData.map(d => parseFloat(d.revenue||0));
+orders   = salesData.map(d => parseInt(d.orders||0));
+
+// Revenue Chart
+new Chart(document.getElementById('salesChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Revenue (₹)',
+        data: revenues,
+        backgroundColor: 'rgba(201,148,58,.75)',
+        borderColor: '#C9943A',
+        borderWidth: 2,
+        borderRadius: 6,
+        yAxisID: 'y'
+      },
+      {
+        label: 'Orders',
+        data: orders,
+        type: 'line',
+        borderColor: '#2C1810',
+        backgroundColor: 'rgba(44,24,16,.1)',
+        fill: false,
+        tension: 0.4,
+        pointBackgroundColor: '#2C1810',
+        pointRadius: 4,
+        yAxisID: 'y1'
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { family: "'DM Sans',sans-serif", size: 12 } } } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,.04)' } },
+      y: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { callback: v => '₹'+v.toLocaleString('en-IN') } },
+      y1: { position: 'right', grid: { display: false }, ticks: { stepSize: 1 } }
+    }
+  }
+});
+
+// Status Doughnut Chart
+const statusLabels = statusData.map(s => s.status);
+const statusCounts = statusData.map(s => s.count);
+const statusColors = {
+  'Pending': '#B8832A', 'In Progress': '#1D5C8A', 'Quality Check': '#6A1D8A',
+  'Ready': '#2E7D4F', 'Delivered': '#2C1810', 'Cancelled': '#9B2335'
+};
+
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: statusLabels,
+    datasets: [{
+      data: statusCounts,
+      backgroundColor: statusLabels.map(l => statusColors[l] || '#888'),
+      borderWidth: 3,
+      borderColor: '#FDFAF4'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { font: { family: "'DM Sans',sans-serif", size: 12 }, padding: 16 }
+      }
+    },
+    cutout: '65%'
+  }
+});
+</script>
+{% endblock %}

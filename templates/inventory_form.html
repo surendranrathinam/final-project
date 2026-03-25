@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Inventory Item{% endblock %}
+{% block page_title %}{{ action }} Inventory Item{% endblock %}
+{% block content %}
+<div class="fade-in" style="max-width:680px">
+<div class="page-header">
+  <h1>{{ action }} Inventory Item</h1>
+  <a href="{{ url_for('inventory') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+<div class="card">
+  <form method="POST">
+    <div class="form-grid">
+      <div class="form-group"><label>Item Name *</label><input name="name" required value="{{ item.name if item else '' }}" placeholder="e.g. Teak Planks"></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select name="category">
+          {% for c in ['Wood','Sheet','Finish','Hardware','Consumable','Other'] %}
+          <option {% if item and item.category==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Unit</label>
+        <select name="unit">
+          {% for u in ['sqft','sheet','ltr','kg','pcs','box','roll','meter'] %}
+          <option {% if item and item.unit==u %}selected{% endif %}>{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group"><label>Current Quantity</label><input type="number" name="quantity" step="0.01" value="{{ item.quantity if item else '' }}" required placeholder="0"></div>
+      <div class="form-group"><label>Min Stock Level</label><input type="number" name="min_stock" step="0.01" value="{{ item.min_stock if item else '' }}" placeholder="5"></div>
+      <div class="form-group"><label>Cost Per Unit (₹)</label><input type="number" name="cost_per_unit" step="0.01" value="{{ item.cost_per_unit if item else '' }}" placeholder="0.00"></div>
+      <div class="form-group"><label>Supplier</label><input name="supplier" value="{{ item.supplier if item else '' }}" placeholder="Supplier name"></div>
+      <div class="form-group"><label>Storage Location</label><input name="location" value="{{ item.location if item else '' }}" placeholder="e.g. Rack A1"></div>
+    </div>
+    <div class="flex gap-8 mt-24">
+      <button class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+      <a href="{{ url_for('inventory') }}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}
