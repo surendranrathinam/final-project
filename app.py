@@ -18,11 +18,16 @@ def inject_globals():
     return {'today': date.today(), 'now': datetime.now(), 'now_date': date.today().isoformat()}
 
 # ─── DB CONFIG ────────────────────────────────────────────────────────────────
+def env_or_default(key, default):
+    value = os.getenv(key)
+    return value if value and value.strip() else default
+
+
 DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', 'xx'),
-    'database': os.getenv('DB_NAME', 'woodwork_erp')
+    'host': env_or_default('DB_HOST', 'localhost'),
+    'user': env_or_default('DB_USER', 'root'),
+    'password': env_or_default('DB_PASSWORD', 'xx'),
+    'database': env_or_default('DB_NAME', 'woodwork_erp')
 }
 
 def get_db():
