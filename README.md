@@ -45,15 +45,15 @@ mysql -u root -p < schema.sql
 ```
 
 ### 4. Configure Database Connection
-Edit `app.py` (top section) with your MySQL credentials:
-```python
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'YOUR_PASSWORD',
-    'database': 'woodwork_erp'
-}
+Set MySQL credentials with environment variables (recommended):
+```bash
+export DB_HOST=localhost
+export DB_USER=root
+export DB_PASSWORD=xx
+export DB_NAME=woodwork_erp
 ```
+
+If variables are not set, the app defaults to `localhost`, `root`, password `xx`, and `woodwork_erp`.
 
 ### 5. Run the Application
 ```bash

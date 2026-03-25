@@ -19,10 +19,10 @@ def inject_globals():
 
 # ─── DB CONFIG ────────────────────────────────────────────────────────────────
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'woodwork_erp'
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'user': os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASSWORD', 'xx'),
+    'database': os.getenv('DB_NAME', 'woodwork_erp')
 }
 
 def get_db():
