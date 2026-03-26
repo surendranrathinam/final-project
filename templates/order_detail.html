@@ -123,6 +123,61 @@
   </div>
 </div>
 
+<!-- Booking Communication Formats -->
+<div class="grid-2" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px">Client Booking Mail Format</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:10px">
+      Copy this message and send it to the client.
+    </div>
+    <textarea readonly style="min-height:250px;font-size:13px;line-height:1.6;background:var(--cream)">Subject: Booking Confirmation – Order #{{ '%04d'|format(order.id) }}
+
+Dear {{ order.customer_name }},
+
+Thank you for your booking with WoodCraft ERP.
+Your product booking has been confirmed with the following details:
+
+- Order ID: #{{ '%04d'|format(order.id) }}
+- Booking Date: {{ order.created_at.strftime('%d %b %Y') }}
+- Delivery Date: {{ order.delivery_date.strftime('%d %b %Y') if order.delivery_date else 'To be confirmed' }}
+- Booking Amount: ₹{{ "{:,.0f}".format(order.total_amount) }}
+- Current Status: {{ order.status }}
+
+If you need any changes, please reply to this email or call us at the earliest.
+
+Regards,
+WoodCraft Team</textarea>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px">Client Booking Document Format</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:10px">
+      Use this format for print/PDF booking documentation.
+    </div>
+    <textarea readonly style="min-height:250px;font-size:13px;line-height:1.6;background:var(--cream)">BOOKING DOCUMENT
+
+Company: WoodCraft ERP
+Order ID: #{{ '%04d'|format(order.id) }}
+Booking Date: {{ order.created_at.strftime('%d %b %Y') }}
+
+Client Details
+--------------
+Name: {{ order.customer_name }}
+Phone: {{ order.phone or 'N/A' }}
+Email: {{ order.email or 'N/A' }}
+
+Order Summary
+-------------
+Total Amount: ₹{{ "{:,.0f}".format(order.total_amount) }}
+Expected Delivery: {{ order.delivery_date.strftime('%d %b %Y') if order.delivery_date else 'To be confirmed' }}
+Status: {{ order.status }}
+
+Authorized Signature: ____________________
+Client Signature: ________________________
+</textarea>
+  </div>
+</div>
+
 <!-- Tasks -->
 <div class="card">
   <div class="card-header">
