@@ -5,6 +5,7 @@ from functools import wraps
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from pymongo import MongoClient, ReturnDocument
+from waitress import serve
 
 
 app = Flask(__name__)
@@ -737,4 +738,11 @@ def reports():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "5000"))
+    is_dev = os.getenv("FLASK_ENV", "").lower() == "development" or os.getenv("FLASK_DEBUG") == "1"
+
+    if is_dev:
+        app.run(debug=True, host=host, port=port)
+    else:
+        serve(app, host=host, port=port)
