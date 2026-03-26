@@ -463,6 +463,7 @@ def generate_invoice(order_id):
         "status": "Unpaid",
         "created_at": datetime.utcnow(),
         "paid_at": None,
+        "payment_method": None,
     }
     db.invoices.insert_one(invoice)
 
@@ -499,10 +500,12 @@ def invoice_detail(id):
 @app.route("/invoices/<int:id>/mark-paid", methods=["POST"])
 @login_required
 def mark_paid(id):
+    payment_method = request.form.get("payment_method", "").strip() or "QR Code"
     db.invoices.update_one(
-        {"id": id}, {"$set": {"status": "Paid", "paid_at": datetime.utcnow()}}
+        {"id": id},
+        {"$set": {"status": "Paid", "paid_at": datetime.utcnow(), "payment_method": payment_method}},
     )
-    flash("Invoice marked as paid", "success")
+    flash(f"Payment received using {payment_method}", "success")
     return redirect(url_for("invoice_detail", id=id))
 
 
