@@ -27,10 +27,15 @@ WoodCraft ERP is a Flask-based carpentry business management app that now runs o
    export FLASK_SECRET_KEY="change-me"
    ```
 
-4. Run the server:
+4. Run the server (production WSGI server via Waitress):
    ```bash
    python app.py
    ```
+
+   > For local development with Flask debugger/reloader:
+   > ```bash
+   > FLASK_ENV=development python app.py
+   > ```
 
 5. Open:
    `http://localhost:5000`
