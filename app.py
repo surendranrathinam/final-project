@@ -5,6 +5,7 @@ from functools import wraps
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from pymongo import MongoClient, ReturnDocument
+from pymongo.errors import PyMongoError
 from waitress import serve
 
 
@@ -14,8 +15,9 @@ app.jinja_env.globals.update(enumerate=enumerate)
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "woodcraft_erp")
+MONGO_TIMEOUT_MS = int(os.getenv("MONGO_TIMEOUT_MS", "5000"))
 
-mongo_client = MongoClient(MONGO_URI)
+mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=MONGO_TIMEOUT_MS)
 db = mongo_client[MONGO_DB_NAME]
 
 
@@ -65,6 +67,13 @@ def parse_items_json(value):
     return parsed if isinstance(parsed, list) else []
 
 
+def parse_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def login_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -88,7 +97,10 @@ def seed_users():
     db.users.insert_many(users)
 
 
-seed_users()
+try:
+    seed_users()
+except PyMongoError as error:
+    app.logger.warning("Skipping user seed because MongoDB is unavailable: %s", error)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -271,9 +283,9 @@ def add_product():
             "finish": request.form.get("finish", "").strip(),
             "dimensions": request.form.get("dimensions", "").strip(),
             "description": request.form.get("description", "").strip(),
-            "base_price": float(request.form.get("base_price") or 0),
-            "labor_cost": float(request.form.get("labor_cost") or 0),
-            "material_cost": float(request.form.get("material_cost") or 0),
+            "base_price": parse_float(request.form.get("base_price")),
+            "labor_cost": parse_float(request.form.get("labor_cost")),
+            "material_cost": parse_float(request.form.get("material_cost")),
             "created_at": datetime.utcnow(),
         }
         db.products.insert_one(product)
@@ -302,9 +314,9 @@ def edit_product(id):
                     "finish": request.form.get("finish", "").strip(),
                     "dimensions": request.form.get("dimensions", "").strip(),
                     "description": request.form.get("description", "").strip(),
-                    "base_price": float(request.form.get("base_price") or 0),
-                    "labor_cost": float(request.form.get("labor_cost") or 0),
-                    "material_cost": float(request.form.get("material_cost") or 0),
+                    "base_price": parse_float(request.form.get("base_price")),
+                    "labor_cost": parse_float(request.form.get("labor_cost")),
+                    "material_cost": parse_float(request.form.get("material_cost")),
                 }
             },
         )
@@ -356,7 +368,7 @@ def new_order():
             product = products_map.get(product_id)
             if not product:
                 continue
-            unit_price = float(product.get("base_price", 0))
+            unit_price = parse_float(product.get("base_price", 0))
             total += unit_price * qty
             items.append(
                 {
@@ -462,9 +474,9 @@ def generate_invoice(order_id):
     for item in order_items:
         qty = item.get("quantity", 0)
         product = products_map.get(item.get("product_id"), {})
-        subtotal += float(item.get("unit_price", 0)) * qty
-        material_cost += float(product.get("material_cost", 0)) * qty
-        labor_cost += float(product.get("labor_cost", 0)) * qty
+        subtotal += parse_float(item.get("unit_price", 0)) * qty
+        material_cost += parse_float(product.get("material_cost", 0)) * qty
+        labor_cost += parse_float(product.get("labor_cost", 0)) * qty
 
     tax = subtotal * 0.18
     total_amount = subtotal + tax
@@ -578,7 +590,7 @@ def add_task():
         "assigned_to": assigned_to,
         "order_id": order_id,
         "due_date": parse_date(request.form.get("due_date", "")),
-        "labor_hours": float(request.form.get("labor_hours") or 0),
+        "labor_hours": parse_float(request.form.get("labor_hours")),
         "status": "Pending",
         "created_at": datetime.utcnow(),
     }
@@ -611,10 +623,10 @@ def add_inventory():
             "id": get_next_id("inventory"),
             "name": request.form.get("name", "").strip(),
             "category": request.form.get("category", "").strip(),
-            "quantity": float(request.form.get("quantity") or 0),
+            "quantity": parse_float(request.form.get("quantity")),
             "unit": request.form.get("unit", "").strip(),
-            "min_stock": float(request.form.get("min_stock") or 0),
-            "cost_per_unit": float(request.form.get("cost_per_unit") or 0),
+            "min_stock": parse_float(request.form.get("min_stock")),
+            "cost_per_unit": parse_float(request.form.get("cost_per_unit")),
             "supplier": request.form.get("supplier", "").strip(),
             "location": request.form.get("location", "").strip(),
             "notes": request.form.get("notes", "").strip(),
@@ -642,10 +654,10 @@ def edit_inventory(id):
                 "$set": {
                     "name": request.form.get("name", "").strip(),
                     "category": request.form.get("category", "").strip(),
-                    "quantity": float(request.form.get("quantity") or 0),
+                    "quantity": parse_float(request.form.get("quantity")),
                     "unit": request.form.get("unit", "").strip(),
-                    "min_stock": float(request.form.get("min_stock") or 0),
-                    "cost_per_unit": float(request.form.get("cost_per_unit") or 0),
+                    "min_stock": parse_float(request.form.get("min_stock")),
+                    "cost_per_unit": parse_float(request.form.get("cost_per_unit")),
                     "supplier": request.form.get("supplier", "").strip(),
                     "location": request.form.get("location", "").strip(),
                     "notes": request.form.get("notes", "").strip(),
@@ -661,7 +673,7 @@ def edit_inventory(id):
 @app.route("/inventory/<int:id>/restock", methods=["POST"])
 @login_required
 def restock_inventory(id):
-    quantity = float(request.form.get("quantity") or 0)
+    quantity = parse_float(request.form.get("quantity"))
     db.inventory.update_one({"id": id}, {"$inc": {"quantity": quantity}})
     flash("Inventory restocked", "success")
     return redirect(url_for("inventory"))
