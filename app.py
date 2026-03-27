@@ -44,7 +44,25 @@ def normalize_many(cursor):
 def parse_date(value: str):
     if not value:
         return None
-    return datetime.strptime(value, "%Y-%m-%d")
+    try:
+        return datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def parse_int(value, default=None):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def parse_items_json(value):
+    try:
+        parsed = json.loads(value or "[]")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    return parsed if isinstance(parsed, list) else []
 
 
 def login_required(func):
@@ -321,15 +339,20 @@ def orders():
 @login_required
 def new_order():
     if request.method == "POST":
-        customer_id = int(request.form.get("customer_id"))
-        raw_items = json.loads(request.form.get("items", "[]"))
+        customer_id = parse_int(request.form.get("customer_id"))
+        raw_items = parse_items_json(request.form.get("items"))
+        if customer_id is None:
+            flash("Please select a valid customer", "warning")
+            return redirect(url_for("new_order"))
         products_map = {p["id"]: p for p in normalize_many(db.products.find({}))}
 
         items = []
         total = 0.0
         for item in raw_items:
-            product_id = int(item.get("product_id"))
-            qty = int(item.get("qty", 1))
+            product_id = parse_int(item.get("product_id"))
+            qty = parse_int(item.get("qty"), 1)
+            if product_id is None or qty is None or qty <= 0:
+                continue
             product = products_map.get(product_id)
             if not product:
                 continue
@@ -541,12 +564,19 @@ def tasks():
 @app.route("/tasks/add", methods=["POST"])
 @login_required
 def add_task():
+    assigned_to = parse_int(request.form.get("assigned_to"))
+    order_id = parse_int(request.form.get("order_id"))
+
+    if assigned_to is None or order_id is None:
+        flash("Please choose both a carpenter and an order", "warning")
+        return redirect(url_for("tasks"))
+
     payload = {
         "id": get_next_id("tasks"),
         "title": request.form.get("title", "").strip(),
         "description": request.form.get("description", "").strip(),
-        "assigned_to": int(request.form.get("assigned_to")) if request.form.get("assigned_to") else None,
-        "order_id": int(request.form.get("order_id")) if request.form.get("order_id") else None,
+        "assigned_to": assigned_to,
+        "order_id": order_id,
         "due_date": parse_date(request.form.get("due_date", "")),
         "labor_hours": float(request.form.get("labor_hours") or 0),
         "status": "Pending",
