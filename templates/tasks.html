@@ -26,39 +26,72 @@
 <div class="card">
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Task</th><th>Order</th><th>Customer</th><th>Carpenter</th><th>Due Date</th><th>Hours</th><th>Status</th><th>Actions</th></tr></thead>
+      {# FIX: Was 8 columns with "Actions" header showing just a badge (duplicate of Status).
+              Now 7 columns — Status column has the interactive dropdown, no redundant badge. #}
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Order</th>
+          <th>Customer</th>
+          <th>Carpenter</th>
+          <th>Due Date</th>
+          <th>Hours</th>
+          <th>Status</th>
+        </tr>
+      </thead>
       <tbody>
         {% for t in tasks %}
         <tr>
           <td>
             <div style="font-weight:500">{{ t.title }}</div>
-            {% if t.description %}<div style="font-size:12px;color:var(--text-light);margin-top:2px">{{ t.description[:60] }}{% if t.description|length > 60 %}…{% endif %}</div>{% endif %}
+            {% if t.description %}
+            <div style="font-size:12px;color:var(--text-light);margin-top:2px">
+              {{ t.description[:60] }}{% if t.description|length > 60 %}…{% endif %}
+            </div>
+            {% endif %}
           </td>
           <td>
             {% if t.order_id %}
-            <a href="{{ url_for('order_detail', id=t.order_id) }}" style="color:var(--brass);font-family:'DM Mono',monospace">#{{ '%04d'|format(t.order_id) }}</a>
+            <a href="{{ url_for('order_detail', id=t.order_id) }}"
+               style="color:var(--brass);font-family:'DM Mono',monospace">
+              #{{ '%04d'|format(t.order_id) }}
+            </a>
             {% else %}—{% endif %}
           </td>
           <td style="font-size:13px">{{ t.customer_name or '—' }}</td>
           <td>
-            {% if t.carpenter %}<span style="font-size:13px;font-weight:500">{{ t.carpenter }}</span>{% else %}<span style="color:var(--text-light)">Unassigned</span>{% endif %}
+            {% if t.carpenter %}
+            <span style="font-size:13px;font-weight:500">{{ t.carpenter }}</span>
+            {% else %}
+            <span style="color:var(--text-light)">Unassigned</span>
+            {% endif %}
           </td>
-          <td style="font-size:13px;{% if t.due_date and t.due_date < today and t.status != 'Completed' %}color:var(--danger);font-weight:600{% else %}color:var(--text-light){% endif %}">
+          <td style="font-size:13px;
+            {% if t.due_date and t.due_date < today and t.status != 'Completed' %}
+              color:var(--danger);font-weight:600
+            {% else %}
+              color:var(--text-light)
+            {% endif %}">
             {{ t.due_date.strftime('%d %b %Y') if t.due_date else '—' }}
           </td>
           <td style="font-family:'DM Mono',monospace;font-size:13px">{{ t.labor_hours }}h</td>
           <td>
-            <select onchange="updateTaskStatus({{ t.id }}, this.value)" class="status-select"
-                    style="font-size:12px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--linen-dark);background:var(--cream);cursor:pointer">
+            <select onchange="updateTaskStatus({{ t.id }}, this.value)"
+                    style="font-size:12px;padding:4px 8px;border-radius:6px;
+                           border:1.5px solid var(--linen-dark);
+                           background:var(--cream);cursor:pointer">
               {% for s in ['Pending','In Progress','Completed','On Hold'] %}
               <option {% if t.status==s %}selected{% endif %}>{{ s }}</option>
               {% endfor %}
             </select>
           </td>
-          <td><span class="badge badge-{{ t.status.lower().replace(' ','-') }}">{{ t.status }}</span></td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="text-center" style="padding:40px;color:var(--text-light)">No tasks assigned yet</td></tr>
+        <tr>
+          <td colspan="7" class="text-center" style="padding:40px;color:var(--text-light)">
+            No tasks assigned yet
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
@@ -72,24 +105,40 @@
     <div class="modal-title"><i class="fas fa-screwdriver-wrench"></i> Assign New Task</div>
     <form method="POST" action="{{ url_for('add_task') }}">
       <div class="form-grid">
-        <div class="form-group full"><label>Task Title *</label><input name="title" required placeholder="e.g. Cut teak planks to size"></div>
+        <div class="form-group full">
+          <label>Task Title *</label>
+          <input name="title" required placeholder="e.g. Cut teak planks to size">
+        </div>
         <div class="form-group">
           <label>Assign To (Carpenter)</label>
           <select name="assigned_to">
             <option value="">— Unassigned —</option>
-            {% for c in carpenters %}<option value="{{ c.id }}">{{ c.username }}</option>{% endfor %}
+            {% for c in carpenters %}
+            <option value="{{ c.id }}">{{ c.username }}</option>
+            {% endfor %}
           </select>
         </div>
         <div class="form-group">
           <label>Link to Order</label>
           <select name="order_id">
             <option value="">— No Order —</option>
-            {% for o in orders %}<option value="{{ o.id }}">#{{ '%04d'|format(o.id) }} – {{ o.name }}</option>{% endfor %}
+            {% for o in orders %}
+            <option value="{{ o.id }}">#{{ '%04d'|format(o.id) }} – {{ o.name }}</option>
+            {% endfor %}
           </select>
         </div>
-        <div class="form-group"><label>Due Date</label><input type="date" name="due_date"></div>
-        <div class="form-group"><label>Labor Hours (Est.)</label><input type="number" name="labor_hours" step="0.5" placeholder="0" min="0"></div>
-        <div class="form-group full"><label>Description</label><textarea name="description" placeholder="Task details…"></textarea></div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" name="due_date">
+        </div>
+        <div class="form-group">
+          <label>Labor Hours (Est.)</label>
+          <input type="number" name="labor_hours" step="0.5" placeholder="0" min="0">
+        </div>
+        <div class="form-group full">
+          <label>Description</label>
+          <textarea name="description" placeholder="Task details…"></textarea>
+        </div>
       </div>
       <div class="flex gap-8 mt-16">
         <button class="btn btn-primary"><i class="fas fa-check"></i> Assign Task</button>
@@ -107,8 +156,11 @@ function updateTaskStatus(id, status) {
   form.method = 'POST';
   form.action = `/tasks/${id}/status`;
   const input = document.createElement('input');
-  input.name = 'status'; input.value = status; form.appendChild(input);
-  document.body.appendChild(form); form.submit();
+  input.name = 'status';
+  input.value = status;
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
 }
 </script>
 {% endblock %}
